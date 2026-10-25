@@ -7,6 +7,7 @@ import {
   useReducer,
   type ReactNode,
 } from "react";
+import { toDateKey } from "./dates";
 import { DEMO_HABITS } from "./demo-habits";
 import type { Habit, HabitInput } from "./types";
 
@@ -17,21 +18,24 @@ import type { Habit, HabitInput } from "./types";
 
 type State = {
   habits: Habit[];
-  completedIds: string[];
+  // Marcas por día: { "2026-10-25": ["id-del-habito", ...] }
+  completions: Record<string, string[]>;
 };
 
 type Action =
-  | { type: "add"; id: string; input: HabitInput }
+  | { type: "add"; id: string; createdOn: string; input: HabitInput }
   | { type: "update"; id: string; input: HabitInput }
   | { type: "archive"; id: string }
   | { type: "restore"; id: string }
   | { type: "remove"; id: string }
-  | { type: "toggle"; id: string };
+  | { type: "toggle"; dateKey: string; id: string };
 
 const initialState: State = {
   habits: DEMO_HABITS,
-  completedIds: [],
+  completions: {},
 };
+
+const NO_IDS: string[] = [];
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -40,7 +44,12 @@ function reducer(state: State, action: Action): State {
         ...state,
         habits: [
           ...state.habits,
-          { id: action.id, archived: false, ...action.input },
+          {
+            id: action.id,
+            archived: false,
+            createdOn: action.createdOn,
+            ...action.input,
+          },
         ],
       };
     case "update":
@@ -64,18 +73,26 @@ function reducer(state: State, action: Action): State {
           habit.id === action.id ? { ...habit, archived: false } : habit,
         ),
       };
-    case "remove":
+    case "remove": {
+      const completions: Record<string, string[]> = {};
+      for (const [dateKey, ids] of Object.entries(state.completions)) {
+        completions[dateKey] = ids.filter((id) => id !== action.id);
+      }
       return {
         habits: state.habits.filter((habit) => habit.id !== action.id),
-        completedIds: state.completedIds.filter((id) => id !== action.id),
+        completions,
       };
-    case "toggle":
+    }
+    case "toggle": {
+      const current = state.completions[action.dateKey] ?? NO_IDS;
+      const next = current.includes(action.id)
+        ? current.filter((id) => id !== action.id)
+        : [...current, action.id];
       return {
         ...state,
-        completedIds: state.completedIds.includes(action.id)
-          ? state.completedIds.filter((id) => id !== action.id)
-          : [...state.completedIds, action.id],
+        completions: { ...state.completions, [action.dateKey]: next },
       };
+    }
   }
 }
 
@@ -87,13 +104,13 @@ function newTempId(): string {
 
 type HabitsContextValue = {
   habits: Habit[];
-  completedIds: string[];
+  getCompletedIds: (dateKey: string) => string[];
   addHabit: (input: HabitInput) => void;
   updateHabit: (id: string, input: HabitInput) => void;
   archiveHabit: (id: string) => void;
   restoreHabit: (id: string) => void;
   removeHabit: (id: string) => void;
-  toggleHabit: (id: string) => void;
+  toggleHabit: (dateKey: string, id: string) => void;
 };
 
 const HabitsContext = createContext<HabitsContextValue | null>(null);
@@ -104,13 +121,19 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
   const value = useMemo<HabitsContextValue>(
     () => ({
       habits: state.habits,
-      completedIds: state.completedIds,
-      addHabit: (input) => dispatch({ type: "add", id: newTempId(), input }),
+      getCompletedIds: (dateKey) => state.completions[dateKey] ?? NO_IDS,
+      addHabit: (input) =>
+        dispatch({
+          type: "add",
+          id: newTempId(),
+          createdOn: toDateKey(new Date()),
+          input,
+        }),
       updateHabit: (id, input) => dispatch({ type: "update", id, input }),
       archiveHabit: (id) => dispatch({ type: "archive", id }),
       restoreHabit: (id) => dispatch({ type: "restore", id }),
       removeHabit: (id) => dispatch({ type: "remove", id }),
-      toggleHabit: (id) => dispatch({ type: "toggle", id }),
+      toggleHabit: (dateKey, id) => dispatch({ type: "toggle", dateKey, id }),
     }),
     [state],
   );

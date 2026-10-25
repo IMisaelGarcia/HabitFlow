@@ -6,11 +6,12 @@ export type HabitInput = {
 };
 
 // Un hábito guardado.
-// Se amplía en el Paso 5 (color, ícono, frecuencia, meta).
+// Se amplía en el Paso 5b (color, ícono, frecuencia, meta).
 export type Habit = {
   id: string;
   name: string;
   description?: string;
   category: string;
   archived: boolean;
+  createdOn: string; // día de creación, formato "AAAA-MM-DD"
 };
