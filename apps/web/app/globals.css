@@ -1,26 +1,112 @@
 @import "tailwindcss";
 
+/* ---------- Tokens de color: modo claro (por defecto) ---------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #fbf8f2;
+  --surface: #fffdf9;
+  --foreground: #2b2a27;
+  --muted: #6b675e;
+  --border: #e7e1d4;
+  --line: #f0eadc;
+  --accent: #3f6b5e;
+  --accent-foreground: #ffffff;
+  --accent-soft: #e3ede8;
+  --danger: #a8483d;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ---------- Modo oscuro ----------
+   Se activa solo según el sistema. Más adelante, cuando haya selector
+   de tema, se forzará con data-theme="dark" o data-theme="light". */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #161715;
+  --surface: #1e1f1c;
+  --foreground: #ece9e1;
+  --muted: #a29e92;
+  --border: #2e2f2b;
+  --line: #1c1d1a;
+  --accent: #7fb5a2;
+  --accent-foreground: #10201a;
+  --accent-soft: #223229;
+  --danger: #e08a7e;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --background: #161715;
+    --surface: #1e1f1c;
+    --foreground: #ece9e1;
+    --muted: #a29e92;
+    --border: #2e2f2b;
+    --line: #1c1d1a;
+    --accent: #7fb5a2;
+    --accent-foreground: #10201a;
+    --accent-soft: #223229;
+    --danger: #e08a7e;
   }
 }
 
+/* ---------- Tokens disponibles como clases de Tailwind ---------- */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+
+  --font-sans: var(--font-inter);
+  --font-handwriting: var(--font-caveat);
+
+  --radius-card: 0.875rem;
+}
+
+/* ---------- Animación de entrada suave (clase: animate-fade-up) ---------- */
+@theme {
+  --animate-fade-up: fade-up 0.35s ease-out;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* ---------- Base ---------- */
 body {
-  background: var(--background);
+  background-color: var(--background);
+  /* Líneas de cuaderno muy sutiles cada 32px */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 31px,
+    var(--line) 31px,
+    var(--line) 32px
+  );
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+/* Foco visible para navegar con teclado */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Respeta a quienes prefieren menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
